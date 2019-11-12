@@ -742,9 +742,9 @@ XYZ_CONSTS_FROM_CONFIG(float, max_length,     MAX_LENGTH);
 XYZ_CONSTS_FROM_CONFIG(float, home_bump_mm,   HOME_BUMP_MM);
 XYZ_CONSTS_FROM_CONFIG(signed char, home_dir, HOME_DIR);
 
+float probeOffsetFromExtruder[XYZ] = { X_PROBE_OFFSET_FROM_EXTRUDER, Y_PROBE_OFFSET_FROM_EXTRUDER, Z_PROBE_OFFSET_FROM_EXTRUDER }; // Initialized by settings.load()
 #if HAS_BED_PROBE
   // Adjustable with M851
-  float probeOffsetFromExtruder[XYZ] = { X_PROBE_OFFSET_FROM_EXTRUDER, Y_PROBE_OFFSET_FROM_EXTRUDER, Z_PROBE_OFFSET_FROM_EXTRUDER }; // Initialized by settings.load()
   float probeMin[2] = { MIN_PROBE_X, MIN_PROBE_Y }; // Initialized by settings.load()
   float probeMax[2] = { MAX_PROBE_X, MAX_PROBE_Y }; // Initialized by settings.load()
 #endif
@@ -755,6 +755,7 @@ XYZ_CONSTS_FROM_CONFIG(signed char, home_dir, HOME_DIR);
  * ***************************************************************************
  */
 
+#if HAS_BED_PROBE
 void calcProbeMaxMin() {
   #ifdef MIN_PROBE_X_FORCED
       probeMin[X_AXIS] = MIN_PROBE_X;
@@ -780,6 +781,7 @@ void calcProbeMaxMin() {
     probeMax[Y_AXIS] = (min(Y_MAX_BED - (MIN_PROBE_EDGE), Y_MAX_POS + probeOffsetFromExtruder[Y_AXIS]));
   #endif
 }
+#endif
 
 
 void stop();

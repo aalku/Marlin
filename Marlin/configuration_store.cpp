@@ -1164,7 +1164,9 @@ void MarlinSettings::postprocess() {
         float probeOffsetFromExtruder[XYZ];
       #endif
       EEPROM_READ(probeOffsetFromExtruder);
-      calcProbeMaxMin();
+      #if HAS_BED_PROBE
+        calcProbeMaxMin();
+      #endif
       
       //
       // Planar Bed Leveling matrix

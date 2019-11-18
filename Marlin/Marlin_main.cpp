@@ -4350,7 +4350,7 @@ inline void gcode_G4() {
 
 #if ENABLED(Z_SAFE_HOMING)
 
-  inline void home_z_safely() {
+  inline void home_z_safely(const boolean unsafe) {
 
     // Disallow Z homing if X or Y are unknown
     if (!TEST(axis_known_position, X_AXIS) || !TEST(axis_known_position, Y_AXIS)) {
@@ -4369,16 +4369,18 @@ inline void gcode_G4() {
     /**
      * Move the Z probe (or just the nozzle) to the safe homing point
      */
-    destination[X_AXIS] = Z_SAFE_HOMING_X_POINT;
-    destination[Y_AXIS] = Z_SAFE_HOMING_Y_POINT;
+    destination[X_AXIS] = unsafe ? current_position[X_AXIS] : Z_SAFE_HOMING_X_POINT;
+    destination[Y_AXIS] = unsafe ? current_position[Y_AXIS] : Z_SAFE_HOMING_Y_POINT;
     destination[Z_AXIS] = current_position[Z_AXIS]; // Z is already at the right height
 
+    bool reachable = position_is_reachable(destination[X_AXIS], destination[Y_AXIS]);
     #if HOMING_Z_WITH_PROBE
+      reachable = reachable && position_is_reachable_by_probe(destination[X_AXIS], destination[Y_AXIS]);
       destination[X_AXIS] -= probeOffsetFromExtruder[X_AXIS];
       destination[Y_AXIS] -= probeOffsetFromExtruder[Y_AXIS];
     #endif
 
-    if (position_is_reachable(destination[X_AXIS], destination[Y_AXIS])) {
+    if (reachable) {
 
       #if ENABLED(DEBUG_LEVELING_FEATURE)
         if (DEBUGGING(LEVELING)) DEBUG_POS("Z_SAFE_HOMING", destination);
@@ -4527,6 +4529,8 @@ inline void gcode_G28(const bool always_home_all) {
                homeZ = always_home_all || parser.seen('Z'),
                home_all = (!homeX && !homeY && !homeZ) || (homeX && homeY && homeZ);
 
+    const bool unsafe = parser.seen('U');
+
     set_destination_from_current();
 
     #if Z_HOME_DIR > 0  // If homing away from BED do Z first
@@ -4614,7 +4618,7 @@ inline void gcode_G28(const bool always_home_all) {
     #if Z_HOME_DIR < 0
       if (home_all || homeZ) {
         #if ENABLED(Z_SAFE_HOMING)
-          home_z_safely();
+          home_z_safely(unsafe);
         #else
           homeaxis(Z_AXIS);
         #endif
@@ -5862,7 +5866,7 @@ void home_all_axes() { gcode_G28(true); }
     if (!isnan(measured_z)) {
       SERIAL_PROTOCOLPAIR_F("Logical Bed X: ", xpos);
       SERIAL_PROTOCOLPAIR_F(" Y: ", ypos);
-      SERIAL_PROTOCOLLNPAIR_F(" Z: ", LOGICAL_Z_POSITION(measured_z));
+      SERIAL_PROTOCOLLNPAIR_F(" Z: ",  LOGICAL_Z_POSITION(current_position[Z_AXIS]));
     }
 
     clean_up_after_endstop_or_probe_move();
